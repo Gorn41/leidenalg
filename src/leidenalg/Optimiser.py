@@ -812,3 +812,65 @@ class Optimiser(object):
     # increasing order based on the resolution value.
     return sorted((bisect.partition for res, bisect in
       bisect_values.items()), key=lambda x: x.resolution_parameter)
+
+  def optimise_partition_hierarchical(self, partition, n_iterations=-1):
+    """
+    Optimise partition and return all intermediate partitions.
+    This function is similar to :func:`optimise_partition` but returns all
+    intermediate partitions. The optimisation proceeds in an iterative manner,
+    in which we first move nodes, and then aggregate the partition. Each of
+    these aggregated partitions is returned in a list. The last partition is
+    the same as the one that would be returned by :func:`optimise_partition`.
+    Parameters
+    ----------
+    partition : :class:`VertexPartition`
+      The partition to optimise.
+    n_iterations : int
+      Number of iterations to run the Leiden algorithm. By default, -1 iterations
+      are run, which means the Leiden algorithm is run until an iteration in
+      which there was no improvement.
+    Returns
+    -------
+    list of :class:`VertexPartition`
+      A list of all intermediate partitions, where the last one is the final
+      optimised partition.
+    """
+    from copy import deepcopy
+
+    hierarchy = []
+    current_partition = deepcopy(partition)
+
+    if n_iterations < 0:
+      optimise_indefinitely = True
+    else:
+      optimise_indefinitely = False
+
+    iteration = 0
+    improvement = True
+    while (optimise_indefinitely and improvement) or iteration < n_iterations:
+        improvement = self.optimise_partition(current_partition, n_iterations=1) > 0
+        hierarchy.append(deepcopy(current_partition))
+
+        if improvement:
+            aggregate_partition = current_partition.aggregate_partition()
+            # Create a new partition of the same type for the aggregate graph
+            current_partition = type(current_partition).FromGraph(aggregate_partition.graph, **current_partition.get_initialisation_kwargs())
+            current_partition.from_coarse_partition(aggregate_partition)
+
+        iteration += 1
+
+    # Map hierarchy back to the original graph
+    for i in range(len(hierarchy) - 2, -1, -1):
+        level = hierarchy[i]
+        coarser_level = hierarchy[i+1]
+        
+        new_membership = [coarser_level.membership[c] for c in level.membership]
+        level.set_membership(new_membership)
+
+    # Set the graph for all partitions to the original graph
+    for level in hierarchy:
+        level._graph = partition.graph
+        level._n = partition.graph.vcount()
+
+
+    return hierarchy

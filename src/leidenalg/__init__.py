@@ -41,6 +41,7 @@ from .functions import MOVE_NODES
 from .functions import MERGE_NODES
 
 from .functions import find_partition
+from .functions import find_partition_hierarchical
 from .functions import find_partition_multiplex
 from .functions import find_partition_temporal
 from .functions import slices_to_layers

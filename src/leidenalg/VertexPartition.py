@@ -67,6 +67,22 @@ class MutableVertexPartition(_ig.VertexClustering):
     return new_partition
 
   @classmethod
+  def FromGraph(cls, graph, **kwargs):
+    """Create a new partition on a new graph.
+
+    Parameters
+    ----------
+    graph
+      The :class:`ig.Graph` on which this partition is defined.
+
+    **kwargs
+      Any remaining keyword arguments will be passed on to the constructor of
+      the new partition.
+    """
+    new_partition = cls(graph, **kwargs)
+    return new_partition
+
+  @classmethod
   def FromPartition(cls, partition, **kwargs):
     """ Create a new partition from an existing partition.
 
@@ -384,6 +400,10 @@ class MutableVertexPartition(_ig.VertexClustering):
     """
     return _c_leiden._MutableVertexPartition_weight_from_comm(self._partition, v, comm)
 
+  def get_initialisation_kwargs(self):
+    """Get keyword arguments for initialising a new partition of the same type."""
+    return {}
+
 class ModularityVertexPartition(MutableVertexPartition):
   r""" Implements modularity. This quality function is well-defined only for positive edge weights.
 
@@ -461,6 +481,9 @@ class ModularityVertexPartition(MutableVertexPartition):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
     new_partition = ModularityVertexPartition(self.graph, self.membership, weights)
     return new_partition
+
+  def get_initialisation_kwargs(self):
+    return {'weights': self.weights}
 
 class SurpriseVertexPartition(MutableVertexPartition):
   """ Implements (asymptotic) Surprise. This quality function is well-defined only for positive edge weights.
@@ -550,6 +573,9 @@ class SurpriseVertexPartition(MutableVertexPartition):
     new_partition = SurpriseVertexPartition(self.graph, self.membership, weights, node_sizes)
     return new_partition
 
+  def get_initialisation_kwargs(self):
+    return {'weights': self.weights, 'node_sizes': self.node_sizes}
+
 class SignificanceVertexPartition(MutableVertexPartition):
   """ Implements Significance. This quality function is well-defined only for unweighted graphs.
 
@@ -624,6 +650,9 @@ class SignificanceVertexPartition(MutableVertexPartition):
     new_partition = SignificanceVertexPartition(self.graph, self.membership, node_sizes)
     return new_partition
 
+  def get_initialisation_kwargs(self):
+    return {'node_sizes': self.node_sizes}
+
 class LinearResolutionParameterVertexPartition(MutableVertexPartition):
   """ Some quality functions have a linear resolution parameter, for which the
   basis is implemented here.
@@ -671,7 +700,7 @@ class LinearResolutionParameterVertexPartition(MutableVertexPartition):
     return _c_leiden._ResolutionParameterVertexPartition_quality(self._partition, resolution_parameter)
 
 class RBERVertexPartition(LinearResolutionParameterVertexPartition):
-  """ Implements Reichardt and Bornholdt’s Potts model with an Erdős-Rényi null model.
+  """ Implements Reichardt and Bornholdt's Potts model with an Erdős-Rényi null model.
   This quality function is well-defined only for positive edge weights.
   This quality function uses a linear resolution parameter.
 
@@ -756,6 +785,9 @@ class RBERVertexPartition(LinearResolutionParameterVertexPartition):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
     new_partition = RBERVertexPartition(self.graph, self.membership, weights, node_sizes, self.resolution_parameter)
     return new_partition
+
+  def get_initialisation_kwargs(self):
+    return {'weights': self.weights, 'node_sizes': self.node_sizes, 'resolution_parameter': self.resolution_parameter}
 
 class RBConfigurationVertexPartition(LinearResolutionParameterVertexPartition):
   r""" Implements Reichardt and Bornholdt's Potts model with a configuration null model.
@@ -845,6 +877,9 @@ class RBConfigurationVertexPartition(LinearResolutionParameterVertexPartition):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
     new_partition = RBConfigurationVertexPartition(self.graph, self.membership, weights, self.resolution_parameter)
     return new_partition
+
+  def get_initialisation_kwargs(self):
+    return {'weights': self.weights, 'resolution_parameter': self.resolution_parameter}
 
 class CPMVertexPartition(LinearResolutionParameterVertexPartition):
   """ Implements the Constant Potts Model (CPM).
@@ -946,6 +981,9 @@ class CPMVertexPartition(LinearResolutionParameterVertexPartition):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
     new_partition = CPMVertexPartition(self.graph, self.membership, weights, node_sizes, self.resolution_parameter)
     return new_partition
+
+  def get_initialisation_kwargs(self):
+    return {'weights': self.weights, 'node_sizes': self.node_sizes, 'resolution_parameter': self.resolution_parameter}
 
   @classmethod
   def Bipartite(cls, graph, resolution_parameter_01,
