@@ -92,82 +92,39 @@ def find_partition(graph, partition_type, initial_membership=None, weights=None,
 
   return partition
 
-def find_partition_hierarchical(graph, partition_type, initial_membership=None, weights=None, n_iterations=-1, max_comm_size=0, seed=None, **kwargs):
-  """
-  Detect communities using the default settings and return the hierarchy.
-  This function detects communities given the specified method in the
-  ``partition_type``. This should be type derived from
-  :class:`VertexPartition.MutableVertexPartition`, e.g.
-  :class:`ModularityVertexPartition` or :class:`CPMVertexPartition`. Optionally
-  an initial membership and edge weights can be provided. Remaining
-  ``**kwargs`` are passed on to the constructor of the ``partition_type``,
-  including for example a ``resolution_parameter``.
-  This function is similar to :func:`find_partition` but returns all
-  intermediate partitions. The optimisation proceeds in an iterative manner,
-  in which we first move nodes, and then aggregate the partition. Each of
-  these aggregated partitions is returned in a list. The last partition is
-  the same as the one that would be returned by :func:`find_partition`.
-  Parameters
-  ----------
-  graph : :class:`ig.Graph`
-    The graph for which to detect communities.
-  partition_type : type of :class:`
-    The type of partition to use for optimisation.
-  initial_membership : list of int
-    Initial membership for the partition. If :obj:`None` then defaults to a
-    singleton partition.
-  weights : list of double, or edge attribute
-    Weights of edges. Can be either an iterable or an edge attribute.
-  n_iterations : int
-    Number of iterations to run the Leiden algorithm. By default, -1 iterations
-    are run, which means the Leiden algorithm is run until an iteration in
-    which there was no improvement.
-  max_comm_size : non-negative int
-    Maximal total size of nodes in a community. If zero (the default), then
-    communities can be of any size.
-  seed : int
-    Seed for the random number generator. By default uses a random seed
-    if nothing is specified.
-  **kwargs
-    Remaining keyword arguments, passed on to constructor of
-    ``partition_type``.
-  Returns
-  -------
-  (partition, list of partition)
-    The first element is the optimised partition. The second element is a list
-    of all intermediate partitions, where the last one is the final
-    optimised partition (i.e. the same as the first element).
-  See Also
-  --------
-  :func:`Optimiser.optimise_partition_hierarchical`
-  :func:`find_partition`
-  Examples
-  --------
-  >>> G = ig.Graph.Famous('Zachary')
-  >>> final_partition, hierarchy = la.find_partition_hierarchical(
-  ...     G, la.ModularityVertexPartition)
-  """
-  if 'weights' not in kwargs and weights is not None:
-      kwargs['weights'] = weights
-
-  partition = partition_type(graph,
-                             initial_membership=initial_membership,
-                             **kwargs)
-  optimiser = Optimiser()
-
-  optimiser.max_comm_size = max_comm_size
-
-  if (not seed is None):
-    optimiser.set_rng_seed(seed)
-
-  hierarchy = optimiser.optimise_partition_hierarchical(partition, n_iterations)
-
-  if not hierarchy:
-      return partition, [partition]
-
-  final_partition = hierarchy[-1]
-
-  return final_partition, hierarchy
+def find_partition_hierarchical(graph, partition_type, n_iterations=-1,
+                                seed=None, **kwargs):
+    """
+    Optimise partition and return all intermediate partitions.
+    This function is a simple wrapper around ``Optimiser.optimise_partition_hierarchical``.
+    It is provided for convenience.
+    Parameters
+    ----------
+    graph : :class:`ig.Graph`
+      The graph to find a partition for.
+    partition_type : :class:`VertexPartition`
+      The type of partition to use.
+    n_iterations : int
+      Number of iterations to run the Leiden algorithm. By default, -1 iterations
+      are run, which means the Leiden algorithm is run until an iteration in
+      which there was no improvement.
+    seed : int
+      Seed for the random number generator.
+    **kwargs
+      Any further arguments are passed on to the partition type.
+    Returns
+    -------
+    (final_partition, hierarchy)
+        A tuple containing the final optimised partition and a list of all
+        intermediate partitions.
+    """
+    partition = partition_type(graph, **kwargs)
+    optimiser = Optimiser()
+    if seed is not None:
+        optimiser.set_rng_seed(seed)
+    hierarchy = optimiser.optimise_partition_hierarchical(partition, n_iterations)
+    final_partition = hierarchy[-1]
+    return final_partition, hierarchy
 
 def find_partition_multiplex(graphs, partition_type, layer_weights=None, n_iterations=2, max_comm_size=0, seed=None, **kwargs):
   """ Detect communities for multiplex graphs.
@@ -248,9 +205,7 @@ def find_partition_multiplex(graphs, partition_type, layer_weights=None, n_itera
   if (not seed is None):
     optimiser.set_rng_seed(seed)
 
-  improvement = optimiser.optimise_partition_multiplex(partitions, layer_weights, n_iterations)
-
-  return partitions[0].membership, improvement
+  return optimiser.optimise_partition_multiplex(partitions, layer_weights, n_iterations)
 
 def find_partition_temporal(graphs, partition_type,
                             interslice_weight=1,
@@ -580,7 +535,7 @@ def slices_to_layers(G_coupling,
           raise ValueError('No unique IDs for slice {0}, require unique IDs:\n{1}'.format(u_slice.index, err))
         common_nodes = set(nodes_v).intersection(set(nodes_u))
         nodes_v = sorted([v for v in G.vs if v[slice_attr] == v_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_id_attr])
-        nodes_u = sorted([v for v in G.vs if v[slice_attr] == u_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_id_attr])
+        nodes_u = sorted([v for v in G.vs if v[slice_attr] == u_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_attr])
         edges = zip(nodes_v, nodes_u)
         e_start = G.ecount()
         G.add_edges(edges)

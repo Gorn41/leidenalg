@@ -476,6 +476,10 @@ class ModularityVertexPartition(MutableVertexPartition):
     self._partition = _c_leiden._new_ModularityVertexPartition(pygraph_t,
         initial_membership, weights)
     self._update_internal_membership()
+    if (weights != None):
+      self.weights = weights
+    else:
+      self.weights = 'weight'
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
@@ -567,6 +571,14 @@ class SurpriseVertexPartition(MutableVertexPartition):
     self._partition = _c_leiden._new_SurpriseVertexPartition(pygraph_t,
         initial_membership, weights, node_sizes)
     self._update_internal_membership()
+    if (weights != None):
+      self.weights = weights
+    else:
+      self.weights = 'weight'
+    if (node_sizes != None):
+      self.node_sizes = node_sizes
+    else:
+      self.node_sizes = None
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
@@ -644,6 +656,10 @@ class SignificanceVertexPartition(MutableVertexPartition):
 
     self._partition = _c_leiden._new_SignificanceVertexPartition(pygraph_t, initial_membership, node_sizes)
     self._update_internal_membership()
+    if (node_sizes != None):
+      self.node_sizes = node_sizes
+    else:
+      self.node_sizes = None
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
@@ -780,6 +796,9 @@ class RBERVertexPartition(LinearResolutionParameterVertexPartition):
     self._partition = _c_leiden._new_RBERVertexPartition(pygraph_t,
         initial_membership, weights, node_sizes, resolution_parameter)
     self._update_internal_membership()
+    self.resolution_parameter = resolution_parameter
+    self.weights = weights
+    self.node_sizes = node_sizes
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
@@ -790,7 +809,7 @@ class RBERVertexPartition(LinearResolutionParameterVertexPartition):
     return {'weights': self.weights, 'node_sizes': self.node_sizes, 'resolution_parameter': self.resolution_parameter}
 
 class RBConfigurationVertexPartition(LinearResolutionParameterVertexPartition):
-  r""" Implements Reichardt and Bornholdt's Potts model with a configuration null model.
+  r""" Implements Reichardt and Bornholdt's Potts model with a configuration model null model.
   This quality function is well-defined only for positive edge weights.
   This quality function uses a linear resolution parameter.
 
@@ -872,6 +891,8 @@ class RBConfigurationVertexPartition(LinearResolutionParameterVertexPartition):
     self._partition = _c_leiden._new_RBConfigurationVertexPartition(pygraph_t,
         initial_membership, weights, resolution_parameter)
     self._update_internal_membership()
+    self.resolution_parameter = resolution_parameter
+    self.weights = weights
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)
@@ -976,6 +997,9 @@ class CPMVertexPartition(LinearResolutionParameterVertexPartition):
     self._partition = _c_leiden._new_CPMVertexPartition(pygraph_t,
         initial_membership, weights, node_sizes, resolution_parameter, correct_self_loops)
     self._update_internal_membership()
+    self.resolution_parameter = resolution_parameter
+    self.weights = weights
+    self.node_sizes = node_sizes
 
   def __deepcopy__(self, memo):
     n, directed, edges, weights, node_sizes = _c_leiden._MutableVertexPartition_get_py_igraph(self._partition)

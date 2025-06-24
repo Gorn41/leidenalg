@@ -221,6 +221,101 @@ extern "C"
     return PyFloat_FromDouble(q);
   }
 
+  PyObject* _Optimiser_optimise_partition_hierarchical(PyObject *self, PyObject *args, PyObject *keywds)
+  {
+    PyObject* py_optimiser = NULL;
+    PyObject* py_partitions = NULL;
+    PyObject* py_layer_weights = NULL;
+    PyObject* py_is_membership_fixed = NULL;
+
+    static const char* kwlist[] = {"optimiser", "partitions", "layer_weights", "is_membership_fixed", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|O", (char**) kwlist,
+                                     &py_optimiser, &py_partitions,
+                                     &py_layer_weights, &py_is_membership_fixed))
+        return NULL;
+
+    size_t nb_partitions = (size_t)PyList_Size(py_partitions);
+    if (nb_partitions != (size_t)PyList_Size(py_layer_weights))
+    {
+      PyErr_SetString(PyExc_ValueError, "Number of layer weights does not equal the number of partitions");
+      return NULL;
+    }
+
+    vector<MutableVertexPartition*> partitions(nb_partitions);
+    vector<double> layer_weights(nb_partitions, 1.0);
+
+    for (size_t layer = 0; layer < nb_partitions; layer++)
+    {
+      PyObject* py_partition = PyList_GetItem(py_partitions, layer);
+      MutableVertexPartition* partition = decapsule_MutableVertexPartition(py_partition);
+      PyObject* layer_weight = PyList_GetItem(py_layer_weights, layer);
+      partitions[layer] = partition;
+      if (PyNumber_Check(layer_weight))
+      {
+        layer_weights[layer] = PyFloat_AsDouble(layer_weight);
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Expected floating value for layer weight.");
+        return NULL;
+      }
+      if (isnan(layer_weights[layer]))
+      {
+        PyErr_SetString(PyExc_TypeError, "Cannot accept NaN weights.");
+        return NULL;
+      }
+    }
+
+    if (nb_partitions == 0)
+      return NULL;
+
+    size_t n = partitions[0]->get_graph()->vcount();
+    vector<bool> is_membership_fixed(n, false);
+    if (py_is_membership_fixed != NULL && py_is_membership_fixed != Py_None)
+    {
+      size_t nb_is_membership_fixed = PyList_Size(py_is_membership_fixed);
+      if (nb_is_membership_fixed != n)
+      {
+        PyErr_SetString(PyExc_TypeError, "Node size vector not the same size as the number of nodes.");
+        return NULL;
+      }
+
+      for (size_t v = 0; v < n; v++)
+      {
+        PyObject* py_item = PyList_GetItem(py_is_membership_fixed, v);
+        is_membership_fixed[v] = PyObject_IsTrue(py_item);
+      }
+    }
+
+    Optimiser* optimiser = decapsule_Optimiser(py_optimiser);
+
+    vector<MutableVertexPartition*> hierarchy;
+    double q = 0.0;
+    try
+    {
+      q = optimiser->optimise_partition_hierarchical(partitions, layer_weights, is_membership_fixed, hierarchy);
+    }
+    catch (std::exception& e)
+    {
+      PyErr_SetString(PyExc_ValueError, e.what());
+      return NULL;
+    }
+    
+    PyObject* py_hierarchy = PyList_New(hierarchy.size());
+    for(size_t i = 0; i < hierarchy.size(); i++)
+    {
+        PyObject* py_partition = capsule_MutableVertexPartition(hierarchy[i]);
+        PyList_SetItem(py_hierarchy, i, py_partition);
+    }
+    
+    PyObject* result = PyTuple_New(2);
+    PyTuple_SetItem(result, 0, PyFloat_FromDouble(q));
+    PyTuple_SetItem(result, 1, py_hierarchy);
+    
+    return result;
+  }
+
   PyObject* _Optimiser_move_nodes(PyObject *self, PyObject *args, PyObject *keywds)
   {
     PyObject* py_optimiser = NULL;

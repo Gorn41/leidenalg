@@ -31,6 +31,7 @@ extern "C"
   PyObject* _new_Optimiser(PyObject *self, PyObject *args);
   PyObject* _Optimiser_optimise_partition(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _Optimiser_optimise_partition_multiplex(PyObject *self, PyObject *args, PyObject *keywds);
+  PyObject* _Optimiser_optimise_partition_hierarchical(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _Optimiser_move_nodes(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _Optimiser_move_nodes_constrained(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _Optimiser_merge_nodes(PyObject *self, PyObject *args, PyObject *keywds);
