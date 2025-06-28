@@ -1,8 +1,51 @@
 # Hierarchical Community Detection
 
-This version of `leidenalg` includes a new feature for discovering the hierarchical structure of communities within a single, consistent optimization run. This is particularly useful for analyzing systems where structure exists at multiple scales, such as identifying local motifs, functional domains, and global architecture in protein interaction networks.
+This enhanced version of `leidenalg` includes a powerful new feature for discovering the hierarchical structure of communities within a single, consistent optimization run. This is particularly valuable for analyzing complex systems where structure exists at multiple scales, such as:
 
-This method avoids common but incorrect approaches like using multiple resolution parameters or recursively clustering subgraphs, which do not preserve a single optimization trajectory. The returned hierarchy is the *true* hierarchy that emerges from the Leiden algorithm's internal aggregation process.
+- **Biological Networks**: Identifying local motifs, functional domains, and global architecture in protein interaction networks
+- **Social Networks**: Discovering friend groups, communities, and broader social structures
+- **Brain Networks**: Analyzing neural circuits, brain regions, and global connectivity patterns
+- **Economic Networks**: Understanding local markets, sectors, and global economic relationships
+
+## Key Advantages
+
+✅ **True Hierarchical Structure**: Returns the *actual* hierarchy that emerges from the Leiden algorithm's internal aggregation process, not artificial multi-resolution results
+
+✅ **Single Optimization Run**: Maintains consistency by capturing hierarchy from one optimization trajectory, avoiding the pitfalls of recursive clustering
+
+✅ **Easy Installation**: Automated build process with embedded library paths - no manual environment configuration required
+
+✅ **Backward Compatible**: Works with all existing `leidenalg` functionality while adding the new hierarchical capabilities
+
+This method avoids common but incorrect approaches like using multiple resolution parameters or recursively clustering subgraphs, which do not preserve a single optimization trajectory. The returned hierarchy represents the genuine multi-scale community structure discovered during the algorithm's natural aggregation process.
+
+## Quick Start
+
+Want to try it right away? Here's a minimal example:
+
+```bash
+# Install (one-time setup)
+git clone <repository-url> && cd leidenalg
+python -m venv venv && source venv/bin/activate
+./install.sh
+
+# Use the hierarchical function
+python -c "
+import leidenalg as la
+import igraph as ig
+
+# Load a sample network
+G = ig.Graph.Famous('Zachary')
+
+# Find hierarchical communities
+final_partition, hierarchy = la.find_partition_hierarchical(G, la.ModularityVertexPartition)
+
+# Analyze results
+print(f'Found {len(hierarchy)} hierarchical levels')
+for i, level in enumerate(hierarchy):
+    print(f'Level {i}: {len(level)} communities')
+"
+```
 
 ## New Function: `find_partition_hierarchical()`
 
@@ -27,7 +70,9 @@ A tuple containing:
 
 ## Installation
 
-To install this version with hierarchical community detection support:
+This version includes an enhanced installation process that automatically handles all dependencies and library paths. **No manual environment variable configuration is required!**
+
+### Quick Installation (Recommended)
 
 ```bash
 # Clone the repository
@@ -38,16 +83,90 @@ cd leidenalg
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Run the installation script
+# Run the automated installation script
 ./install.sh
 ```
 
-The installation script will:
-1. Build all required C++ dependencies
-2. Install the Python package with embedded library paths
-3. Test the installation to ensure everything works
+The installation script will automatically:
+1. ✅ Build all required C++ dependencies (`libleidenalg` and `igraph`)
+2. ✅ Compile the Python extension with embedded library paths (RPATH)
+3. ✅ Install the package using `pip install -e .`
+4. ✅ Run tests to verify the installation works correctly
 
-**No manual `LD_LIBRARY_PATH` configuration needed!** The library paths are automatically embedded during installation.
+### Manual Installation (Advanced Users)
+
+If you prefer to install manually or need to customize the build process:
+
+```bash
+# 1. Clone and set up environment
+git clone <repository-url>
+cd leidenalg
+python -m venv venv
+source venv/bin/activate
+
+# 2. Build C++ dependencies
+bash scripts/build_libleidenalg.sh
+bash scripts/build_igraph.sh
+
+# 3. Install Python package (with embedded library paths)
+pip install -e .
+
+# 4. Test the installation
+python -c "
+import leidenalg as la
+import igraph as ig
+G = ig.Graph.Famous('Zachary')
+final_partition, hierarchy = la.find_partition_hierarchical(G, la.ModularityVertexPartition)
+print(f'✅ Success! Found {len(hierarchy)} levels with {len(final_partition)} communities')
+"
+```
+
+### System Requirements
+
+- **Python**: 3.7 or higher
+- **C++ Compiler**: GCC 8+ or Clang 3.2+ (for building dependencies)
+- **CMake**: Required for building C++ libraries
+- **Git**: For cloning the repository
+
+### What's Different About This Installation?
+
+Unlike typical installations that require users to manually set `LD_LIBRARY_PATH`, this version:
+
+- **Embeds Library Paths**: Uses RPATH/RUNPATH to embed library search paths directly in the compiled extension
+- **No Environment Variables**: Works immediately after installation without any manual configuration
+- **Cross-Platform**: Automatically detects the platform and applies appropriate linking settings
+- **User-Friendly**: Provides clear error messages and automated testing
+
+### Troubleshooting
+
+**Import Error**: If you encounter import errors, ensure you're in the correct virtual environment:
+```bash
+source venv/bin/activate  # Activate the environment
+python -c "import leidenalg"  # Should work without errors
+```
+
+**Build Errors**: Make sure you have the required build tools:
+```bash
+# Ubuntu/Debian
+sudo apt-get install build-essential cmake git
+
+# CentOS/RHEL
+sudo yum groupinstall "Development Tools"
+sudo yum install cmake git
+
+# macOS
+xcode-select --install
+brew install cmake
+```
+
+**Verification**: To verify the installation is working correctly:
+```bash
+python -c "
+import leidenalg as la
+print('✅ leidenalg imported successfully')
+print('✅ Hierarchical function available:', hasattr(la, 'find_partition_hierarchical'))
+"
+```
 
 ### Example Usage
 
