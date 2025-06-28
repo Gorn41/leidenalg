@@ -25,6 +25,30 @@ A tuple containing:
 1.  **`final_partition`**: The fully optimized `VertexPartition` object. This result is equivalent to what the original `find_partition()` function would return.
 2.  **`hierarchy`**: A list of `VertexPartition` objects. Each element represents a single level of the hierarchy, from a fine-grained partition at `hierarchy[0]` to the final, coarse-grained partition at `hierarchy[-1]`.
 
+## Installation
+
+To install this version with hierarchical community detection support:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd leidenalg
+
+# Create and activate a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Run the installation script
+./install.sh
+```
+
+The installation script will:
+1. Build all required C++ dependencies
+2. Install the Python package with embedded library paths
+3. Test the installation to ensure everything works
+
+**No manual `LD_LIBRARY_PATH` configuration needed!** The library paths are automatically embedded during installation.
+
 ### Example Usage
 
 Here is how you can use the new function to analyze a network and extract its hierarchical community structure:

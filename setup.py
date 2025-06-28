@@ -49,6 +49,11 @@ cmdclass = {}
 if should_build_abi3_wheel:
     cmdclass["bdist_wheel"] = bdist_wheel_abi3
 
+import os.path
+
+# Get the absolute path to the library directory
+lib_dir = os.path.abspath('build-deps/install/lib')
+
 setup(
     ext_modules = [
         Extension('leidenalg._c_leiden',
@@ -61,7 +66,10 @@ setup(
                   include_dirs=['include',
                                 'build-deps/install/include',
                                 'build-deps/install/include/libleidenalg'],
-                  library_dirs=['build-deps/install/lib']
+                  library_dirs=['build-deps/install/lib'],
+                  # Embed the runtime library path so LD_LIBRARY_PATH is not needed
+                  runtime_library_dirs=[lib_dir] if sys.platform.startswith('linux') else [],
+                  extra_link_args=[f'-Wl,-rpath,{lib_dir}'] if sys.platform.startswith('linux') else []
         )
     ],
     cmdclass=cmdclass
