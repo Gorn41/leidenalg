@@ -52,11 +52,15 @@ if should_build_abi3_wheel:
 setup(
     ext_modules = [
         Extension('leidenalg._c_leiden',
-                  sources = glob.glob(os.path.join('src', 'leidenalg', '*.cpp')),
+                  sources = [os.path.join('src', 'leidenalg', 'python_optimiser_interface.cpp'),
+                             os.path.join('src', 'leidenalg', 'python_partition_interface.cpp'),
+                             os.path.join('src', 'leidenalg', 'pynterface.cpp')],
                   py_limited_api=should_build_abi3_wheel,
                   define_macros=macros,
                   libraries = ['libleidenalg', 'igraph'],
-                  include_dirs=['include', 'build-deps/install/include'],
+                  include_dirs=['include',
+                                'build-deps/install/include',
+                                'build-deps/install/include/libleidenalg'],
                   library_dirs=['build-deps/install/lib']
         )
     ],

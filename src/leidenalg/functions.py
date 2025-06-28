@@ -32,61 +32,59 @@ def find_partition(graph, partition_type, initial_membership=None, weights=None,
   Parameters
   ----------
   graph : :class:`ig.Graph`
-    The graph for which to detect communities.
-
-  partition_type : type of :class:`
-    The type of partition to use for optimisation.
-
+    The graph to find a partition for.
+  partition_type : :class:`VertexPartition`
+    Type of partition to use. This should be a subclass of
+    :class:`VertexPartition.MutableVertexPartition`.
   initial_membership : list of int
     Initial membership for the partition. If :obj:`None` then defaults to a
     singleton partition.
-
   weights : list of double, or edge attribute
     Weights of edges. Can be either an iterable or an edge attribute.
-
   n_iterations : int
-    Number of iterations to run the Leiden algorithm. By default, 2 iterations
-    are run. If the number of iterations is negative, the Leiden algorithm is
-    run until an iteration in which there was no improvement.
-
-  max_comm_size : non-negative int
-    Maximal total size of nodes in a community. If zero (the default), then
-    communities can be of any size.
-
+    Number of iterations to run the Leiden algorithm for. See
+    :func:`Optimiser.optimise_partition` for more details.
+  max_comm_size : int
+    Maximum number of nodes to consider for a community before it will no
+    longer be split.
   seed : int
-    Seed for the random number generator. By default uses a random seed
-    if nothing is specified.
-
+    Seed for the random number generator.
   **kwargs
-    Remaining keyword arguments, passed on to constructor of
+    Remaining keyword arguments are passed on to the constructor of the
     ``partition_type``.
 
   Returns
   -------
-  partition
+  :class:`VertexPartition.MutableVertexPartition`
     The optimised partition.
 
   See Also
   --------
-  :func:`Optimiser.optimise_partition`
+  :func:`find_partition_multiplex` : for multislice problems.
+  :func:`find_partition_temporal`  : for temporal problems.
+  :func:`Optimiser.optimise_partition` : for more details on options.
 
   Examples
   --------
+  >>> import leidenalg
+  >>> import igraph as ig
   >>> G = ig.Graph.Famous('Zachary')
-  >>> partition = la.find_partition(G, la.ModularityVertexPartition)
-
+  >>> partition = leidenalg.find_partition(G, leidenalg.ModularityVertexPartition)
   """
+
   if not weights is None:
     kwargs['weights'] = weights
   partition = partition_type(graph,
                              initial_membership=initial_membership,
                              **kwargs)
+
   optimiser = Optimiser()
-
-  optimiser.max_comm_size = max_comm_size
-
-  if (not seed is None):
+  if max_comm_size > 0:
+    optimiser.max_comm_size = max_comm_size
+  if not (seed is None):
     optimiser.set_rng_seed(seed)
+  
+  # Use default settings (consider_empty_community = True is the default and should work with our C++ fix)
 
   optimiser.optimise_partition(partition, n_iterations)
 
@@ -535,7 +533,7 @@ def slices_to_layers(G_coupling,
           raise ValueError('No unique IDs for slice {0}, require unique IDs:\n{1}'.format(u_slice.index, err))
         common_nodes = set(nodes_v).intersection(set(nodes_u))
         nodes_v = sorted([v for v in G.vs if v[slice_attr] == v_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_id_attr])
-        nodes_u = sorted([v for v in G.vs if v[slice_attr] == u_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_attr])
+        nodes_u = sorted([v for v in G.vs if v[slice_attr] == u_slice.index and v[vertex_id_attr] in common_nodes], key=lambda v: v[vertex_id_attr])
         edges = zip(nodes_v, nodes_u)
         e_start = G.ecount()
         G.add_edges(edges)
