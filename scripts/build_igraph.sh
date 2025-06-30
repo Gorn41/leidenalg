@@ -1,61 +1,58 @@
-IGRAPH_VERSION=0.10.4
+#!/bin/bash
 
-ROOT_DIR=`pwd`
-echo "Using root dir ${ROOT_DIR}"
+# Build script for igraph library
+# This script builds the igraph C library that libleidenalg depends on
 
-# Create source directory
-if [ ! -d "${ROOT_DIR}/build-deps/src" ]; then
-  echo ""
-  echo "Make directory ${ROOT_DIR}/build-deps/src"
-  mkdir -p ${ROOT_DIR}/build-deps/src
+set -e  # Exit on any error
+
+# Get the root directory of the project
+if [ -n "$LEIDENALG_ROOT" ]; then
+    ROOT_DIR="$LEIDENALG_ROOT"
+else
+    ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fi
 
-cd ${ROOT_DIR}/build-deps/src
-if [ ! -d "igraph" ]; then
-  echo ""
-  echo "Cloning igraph into ${ROOT_DIR}/build-deps/src/igraph"
-  # Clone repository if it does not exist yet
-  git clone --branch ${IGRAPH_VERSION} https://github.com/igraph/igraph.git --single-branch
+echo "Using root dir $ROOT_DIR"
+
+# Paths for source and installation
+SRC_DIR="$ROOT_DIR/build-deps/src/igraph"
+BUILD_DIR="$ROOT_DIR/build-deps/build/igraph"
+INSTALL_DIR="$ROOT_DIR/build-deps/install"
+
+# Clone the repository if it doesn't exist
+if [ ! -d "$SRC_DIR" ]; then
+    echo "Cloning igraph..."
+    mkdir -p "$(dirname "$SRC_DIR")"
+    git clone https://github.com/igraph/igraph.git "$SRC_DIR"
 fi
 
-# Make sure the git repository points to the correct version
-echo ""
-echo "Checking out ${IGRAPH_VERSION} in ${ROOT_DIR}/build-deps/src/igraph"
-cd ${ROOT_DIR}/build-deps/src/igraph
-git fetch origin tag ${IGRAPH_VERSION} --no-tags
-git checkout ${IGRAPH_VERSION}
+cd "$SRC_DIR"
 
-# Make build directory
-if [ ! -d "${ROOT_DIR}/build-deps/build/igraph" ]; then
-  echo ""
-  echo "Make directory ${ROOT_DIR}/build-deps/build/igraph"
-  mkdir -p ${ROOT_DIR}/build-deps/build/igraph
-fi
+# Checkout the specific version we want
+echo "Checking out 0.10.13 in $SRC_DIR"
+git fetch --tags
+git checkout 0.10.13
 
-# Configure, build and install
-cd ${ROOT_DIR}/build-deps/build/igraph
-
-echo ""
+# Configure the build
 echo "Configure igraph build"
-cmake ${ROOT_DIR}/build-deps/src/igraph \
-  -DCMAKE_INSTALL_PREFIX=${ROOT_DIR}/build-deps/install/ \
-  -DBUILD_SHARED_LIBS=ON \
-  -DIGRAPH_GLPK_SUPPORT=OFF \
-  -DIGRAPH_GRAPHML_SUPPORT=OFF \
-  -DIGRAPH_OPENMP_SUPPORT=OFF \
-  -DIGRAPH_USE_INTERNAL_BLAS=ON \
-  -DIGRAPH_USE_INTERNAL_LAPACK=ON \
-  -DIGRAPH_USE_INTERNAL_ARPACK=ON \
-  -DIGRAPH_USE_INTERNAL_GLPK=OFF \
-  -DIGRAPH_USE_INTERNAL_GMP=ON \
-  -DIGRAPH_WARNINGS_AS_ERRORS=OFF \
-  -DCMAKE_BUILD_TYPE=Release \
-  ${EXTRA_CMAKE_ARGS}
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
 
-echo ""
+# Use a clean release build without AddressSanitizer
+cmake "$SRC_DIR" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+    -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG" \
+    -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG" \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DBUILD_SHARED_LIBS=ON
+
+# Build the library
 echo "Build igraph"
-cmake --build .
+make -j$(nproc)
 
-echo ""
-echo "Install igraph to ${ROOT_DIR}/build-deps/install/"
-cmake --build . --target install
+# Install the library
+echo "Install igraph to $INSTALL_DIR/"
+make install
+
+echo "igraph build completed successfully"

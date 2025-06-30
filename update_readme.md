@@ -13,7 +13,7 @@ This enhanced version of `leidenalg` includes a powerful new feature for discove
 
 ✅ **Single Optimization Run**: Maintains consistency by capturing hierarchy from one optimization trajectory, avoiding the pitfalls of recursive clustering
 
-✅ **Easy Installation**: Automated build process with embedded library paths - no manual environment configuration required
+✅ **Clean Installation**: Built without AddressSanitizer - no environment variable configuration required
 
 ✅ **Backward Compatible**: Works with all existing `leidenalg` functionality while adding the new hierarchical capabilities
 
@@ -27,7 +27,7 @@ Want to try it right away? Here's a minimal example:
 # Install (one-time setup)
 git clone <repository-url> && cd leidenalg
 python -m venv venv && source venv/bin/activate
-./install.sh
+./install_clean.sh
 
 # Use the hierarchical function
 python -c "
@@ -70,7 +70,7 @@ A tuple containing:
 
 ## Installation
 
-This version includes an enhanced installation process that automatically handles all dependencies and library paths. **No manual environment variable configuration is required!**
+This version includes a clean installation process that builds optimized release libraries without debugging overhead. **No manual environment variable configuration is required!**
 
 ### Quick Installation (Recommended)
 
@@ -83,12 +83,12 @@ cd leidenalg
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Run the automated installation script
-./install.sh
+# Run the clean installation script
+./install_clean.sh
 ```
 
 The installation script will automatically:
-1. ✅ Build all required C++ dependencies (`libleidenalg` and `igraph`)
+1. ✅ Build all required C++ dependencies (`libleidenalg` and `igraph`) in optimized release mode
 2. ✅ Compile the Python extension with embedded library paths (RPATH)
 3. ✅ Install the package using `pip install -e .`
 4. ✅ Run tests to verify the installation works correctly
@@ -104,9 +104,9 @@ cd leidenalg
 python -m venv venv
 source venv/bin/activate
 
-# 2. Build C++ dependencies
-bash scripts/build_libleidenalg.sh
+# 2. Build C++ dependencies (clean release builds)
 bash scripts/build_igraph.sh
+bash scripts/build_libleidenalg.sh
 
 # 3. Install Python package (with embedded library paths)
 pip install -e .
@@ -121,21 +121,22 @@ print(f'✅ Success! Found {len(hierarchy)} levels with {len(final_partition)} c
 "
 ```
 
+## What's Different About This Installation?
+
+Unlike typical installations that require users to manually set environment variables, this version:
+
+- **Clean Release Build**: Uses optimized release builds without debugging overhead
+- **No AddressSanitizer**: Built without AddressSanitizer to eliminate false positives and performance overhead
+- **Embedded Library Paths**: Uses RPATH/RUNPATH to embed library search paths directly in the compiled extension
+- **Zero Configuration**: Works immediately after installation without any manual setup
+- **Cross-Platform**: Automatically detects the platform and applies appropriate linking settings
+
 ### System Requirements
 
 - **Python**: 3.7 or higher
 - **C++ Compiler**: GCC 8+ or Clang 3.2+ (for building dependencies)
 - **CMake**: Required for building C++ libraries
 - **Git**: For cloning the repository
-
-### What's Different About This Installation?
-
-Unlike typical installations that require users to manually set `LD_LIBRARY_PATH`, this version:
-
-- **Embeds Library Paths**: Uses RPATH/RUNPATH to embed library search paths directly in the compiled extension
-- **No Environment Variables**: Works immediately after installation without any manual configuration
-- **Cross-Platform**: Automatically detects the platform and applies appropriate linking settings
-- **User-Friendly**: Provides clear error messages and automated testing
 
 ### Troubleshooting
 
@@ -211,4 +212,16 @@ for i, partition_level in enumerate(hierarchy):
 # You can validate that the final partition is the same as the last level of the hierarchy
 assert final_partition.membership == hierarchy[-1].membership
 print("\nValidation successful: Final partition matches the last level of the hierarchy.")
-``` 
+```
+
+## Why This Approach is Better
+
+**Previous Issue**: Earlier versions required manual AddressSanitizer configuration because the build system inadvertently enabled debugging features that caused memory warnings. This approach masked underlying issues rather than fixing them.
+
+**Current Solution**: This version uses clean, optimized release builds without debugging overhead. This eliminates:
+- ❌ AddressSanitizer warnings that slow down execution
+- ❌ Manual environment variable configuration  
+- ❌ Memory leak false positives
+- ❌ Performance overhead from debugging instrumentation
+
+**Result**: You get a production-ready library that works out-of-the-box without any special configuration, just like the original `leidenalg` library but with powerful new hierarchical capabilities. 

@@ -32,6 +32,8 @@ the Optimiser class there are various options available for changing some of
 the optimisation procedure which can affect both speed and quality, which are
 not immediately available in :func:`leidenalg.find_partition`.
 """
+
+# Import the core functions and classes
 from .functions import ALL_COMMS
 from .functions import ALL_NEIGH_COMMS
 from .functions import RAND_COMM

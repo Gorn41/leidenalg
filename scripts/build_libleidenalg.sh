@@ -1,63 +1,57 @@
-LIBLEIDENALG_VERSION=0.11.0
+#!/bin/bash
 
-ROOT_DIR=`pwd`
-echo "Using root dir ${ROOT_DIR}"
+# Build script for libleidenalg library
+# This script builds the C++ library that leidenalg depends on
 
-# Create source directory
-if [ ! -d "${ROOT_DIR}/build-deps/src" ]; then
-  echo ""
-  echo "Make directory ${ROOT_DIR}/build-deps/src"
-  mkdir -p ${ROOT_DIR}/build-deps/src
+set -e  # Exit on any error
+
+# Get the root directory of the project
+if [ -n "$LEIDENALG_ROOT" ]; then
+    ROOT_DIR="$LEIDENALG_ROOT"
+else
+    ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fi
 
-cd ${ROOT_DIR}/build-deps/src
-if [ ! -d "libleidenalg" ]; then
-  echo ""
-  echo "Cloning libleidenalg into ${ROOT_DIR}/build-deps/src/libleidenalg"
-  # Clone repository if it does not exist yet
-  git clone --branch ${LIBLEIDENALG_VERSION} https://github.com/vtraag/libleidenalg.git --single-branch
+echo "Using root dir $ROOT_DIR"
+
+# Paths for source and installation
+SRC_DIR="$ROOT_DIR/build-deps/src/libleidenalg"
+BUILD_DIR="$ROOT_DIR/build-deps/build/libleidenalg"
+INSTALL_DIR="$ROOT_DIR/build-deps/install"
+
+# Clone the repository if it doesn't exist
+if [ ! -d "$SRC_DIR" ]; then
+    echo "Cloning libleidenalg..."
+    mkdir -p "$(dirname "$SRC_DIR")"
+    git clone https://github.com/vtraag/libleidenalg.git "$SRC_DIR"
 fi
 
-# Make sure the git repository points to the correct version
-echo ""
-echo "Checking out ${LIBLEIDENALG_VERSION} in ${ROOT_DIR}/build-deps/src/libleidenalg"
-cd ${ROOT_DIR}/build-deps/src/libleidenalg
-git fetch origin tag ${LIBLEIDENALG_VERSION} --no-tags
-git checkout ${LIBLEIDENALG_VERSION}
+cd "$SRC_DIR"
 
-# Make build directory
-if [ ! -d "${ROOT_DIR}/build-deps/build/libleidenalg" ]; then
-  echo ""
-  echo "Make directory ${ROOT_DIR}/build-deps/build/libleidenalg"
-  mkdir -p ${ROOT_DIR}/build-deps/build/libleidenalg
-fi
+# Checkout the specific version we want
+echo "Checking out 0.11.0 in $SRC_DIR"
+git fetch --tags
+git checkout 0.11.0
 
-# Set extra cmake arguments, if any
-EXTRA_CMAKE_ARGS=$@
-
-# Add AddressSanitizer flags for debugging
-EXTRA_CMAKE_ARGS="${EXTRA_CMAKE_ARGS} -DCMAKE_CXX_FLAGS='-fsanitize=address -g' -DCMAKE_SHARED_LINKER_FLAGS='-fsanitize=address'"
-
-# Try to use Ninja if it's available, otherwise use Make
-if which ninja &> /dev/null; then
-  EXTRA_CMAKE_ARGS="${EXTRA_CMAKE_ARGS} -G Ninja"
-fi
-
-# Configure, build and install
-cd ${ROOT_DIR}/build-deps/build/libleidenalg
-
-echo ""
+# Configure the build
 echo "Configure libleidenalg build"
-cmake ${ROOT_DIR}/build-deps/src/libleidenalg \
-    -DCMAKE_INSTALL_PREFIX=${ROOT_DIR}/build-deps/install/ \
-    -DBUILD_SHARED_LIBS=ON \
-    -Digraph_ROOT=${ROOT_DIR}/build-deps/install/lib/cmake/igraph/ \
-    ${EXTRA_CMAKE_ARGS}
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
 
-echo ""
+# Use a clean release build without AddressSanitizer
+cmake "$SRC_DIR" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+    -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG" \
+    -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG" \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+
+# Build the library
 echo "Build libleidenalg"
-cmake --build .
+make -j$(nproc)
 
-echo ""
-echo "Install libleidenalg to ${ROOT_DIR}/build-deps/install/"
-cmake --build . --target install
+# Install the library
+echo "Install libleidenalg to $INSTALL_DIR/"
+make install
+
+echo "libleidenalg build completed successfully"
